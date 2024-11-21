@@ -1,7 +1,8 @@
+import Link from "next/link";
 export default function Home() {
   return (
     <>
-      <nav className=" bg-blue-100 flex justify-around items-center h-12">
+      <nav className="bg-blue-100 flex justify-around items-center h-12">
         <div className="flex items-center">
           <img
             className="h-10"
@@ -17,11 +18,13 @@ export default function Home() {
           </input>
           </div>
         <div>
-          <button>
-            <img
-              className="h-9"
-              src="https://img.icons8.com/?size=100&id=48129&format=png&color=000000"/>
-          </button>
+          <Link href="/createset">
+            <button>
+              <img
+                className="h-9"
+                src="https://img.icons8.com/?size=100&id=48129&format=png&color=000000"/>
+              </button>
+          </Link>
           <button>
             <img
               className="h-10 ml-2"
@@ -30,8 +33,18 @@ export default function Home() {
         </div>
       </nav>
 
-      <div className="bg-gray-200 flex flex-col h-[calc(100vh-3rem)]">
-
+      <div className="flex flex-col h-screen w-3/4 ml-auto mr-auto mt-10">
+        <div className="flex flex-col bg-white shadow-lg shadow-black-300/50">
+          <div className="flex flex-row w-2/5 p-2 items-center text-sm font-medium">
+            <div>Terms</div>
+            <div className="ml-4 text-gray-200">|</div>
+            <img
+              className="h-5 ml-4 mr-2"
+              src="https://img.icons8.com/?size=100&id=NjOjDSZRU0Ma&format=png&color=000000" />
+            <div>Username</div>
+          </div>
+          <div className="ml-2 mb-4 font-bold">Set Title</div>
+        </div>
       </div>
     </>
   );
