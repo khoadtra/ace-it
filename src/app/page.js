@@ -1,52 +1,47 @@
 import Link from "next/link";
+
 export default function Home() {
   return (
     <>
-      <nav className="bg-blue-100 flex justify-around items-center h-12">
+      {/* Navigation Bar */}
+      <nav className="bg-green-100 flex justify-between items-center h-14 px-6">
+        {/* Logo and Title */}
         <div className="flex items-center">
-          <img
-            className="h-10"
-            src="https://img.icons8.com/?size=100&id=OcH8C89hZ9SZ&format=png&color=000000"
-            alt="Quizlet Icon" />
-          <div className="text-blue-900 ml-2">Your Library</div>
-        </div>
-        {/*Input Section */}
-        <div className="flex w-full max-w-lg">
-        <input
-          className="bg-gray-50 text-black-100 flex-grow rounded p-1 pl-6 outline-gray-300 bg-no-repeat bg-[length:1rem] bg-[position:5px_50%] bg-[url('https://img.icons8.com/?size=100&id=59878&format=png&color=000000')]"
-          placeholder="Flashcard sets, questions, textbooks">
-          </input>
+          <div className="h-10 w-10 bg-green-500 text-white flex items-center justify-center rounded-full text-xl font-bold">
+            A
           </div>
-        <div>
-          <Link href="/createset">
-            <button>
-              <img
-                className="h-9"
-                src="https://img.icons8.com/?size=100&id=48129&format=png&color=000000"/>
-              </button>
-          </Link>
-          <button>
-            <img
-              className="h-10 ml-2"
-              src="https://img.icons8.com/?size=100&id=NjOjDSZRU0Ma&format=png&color=000000" />
-          </button> 
+          <div className="text-green-900 ml-3 text-xl font-bold">Ace-It</div>
+        </div>
+        {/* Search Bar */}
+        <div className="flex w-full max-w-lg">
+          <input
+            className="bg-gray-50 text-gray-700 flex-grow rounded p-2 pl-10 outline-gray-300 bg-no-repeat bg-[length:1rem] bg-[position:5px_50%] bg-[url('https://img.icons8.com/?size=100&id=59878&format=png&color=000000')]"
+            placeholder="Search keywords"
+          />
         </div>
       </nav>
 
-      <div className="flex flex-col h-screen w-3/4 ml-auto mr-auto mt-10">
-        <div className="flex flex-col bg-white shadow-lg shadow-black-300/50">
-          <div className="flex flex-row w-2/5 p-2 items-center text-sm font-medium">
-            <div>Terms</div>
-            <div className="ml-4 text-gray-200">|</div>
-            <img
-              className="h-5 ml-4 mr-2"
-              src="https://img.icons8.com/?size=100&id=NjOjDSZRU0Ma&format=png&color=000000" />
-            <div>Username</div>
-          </div>
-          <div className="ml-2 mb-4 font-bold">Set Title</div>
+      {/* Main Content */}
+      <div className="flex flex-col items-center justify-center h-screen">
+        {/* Main Title */}
+        <div className="text-green-500 ml-3 text-xl font-bold">Ace-It</div>
+        <p className="text-lg text-gray-600 mb-8">
+          Your go-to tool for creating, studying, and mastering flashcards.
+        </p>
+        {/* Buttons */}
+        <div className="space-x-4">
+          <Link href="/createset">
+            <button className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition">
+              Create Flashcards
+            </button>
+          </Link>
+          <Link href="/viewset">
+            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition">
+              View Flashcards
+            </button>
+          </Link>
         </div>
       </div>
     </>
   );
 }
-
