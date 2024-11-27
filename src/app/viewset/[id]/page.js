@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 const ViewSingleSet = ({ params }) => {
-  const { id } = params; // Get the set index from the route parameters
+  const { id } = React.use(params); // Get the set index from the route parameters
   const [flashcardSet, setFlashcardSet] = useState(null);
 
   useEffect(() => {
@@ -34,6 +34,31 @@ const ViewSingleSet = ({ params }) => {
       <div className="mt-8 text-center">
         <h1 className="text-4xl font-bold text-black">{flashcardSet.title}</h1>
         <p className="text-lg text-gray-600 mt-2">{flashcardSet.description}</p>
+      </div>
+
+      {/* Buttons */}
+      <div className="flex w-3/4 ml-auto mr-auto mt-5 gap-5">
+        <button className="flex flex-col items-center p-2 bg-white">
+          <img
+            src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
+            className="h-12" />
+          <span>Flashcard</span>
+        </button>
+        <button className="flex flex-col items-center p-2 bg-white">
+          <img
+            src="https://img.icons8.com/?size=100&id=13720&format=png&color=000000"
+            className="h-12" />
+          <span>Quiz</span>
+        </button>
+        <Link href={`/match/${id}`}>
+          <button className="flex flex-col items-center p-2 bg-white">
+            <img
+              src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
+              className="h-12" />
+            <span>Match</span>
+          </button>
+        </Link>
+      
       </div>
 
       {/* Flashcard Viewer */}
