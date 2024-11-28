@@ -21,7 +21,7 @@ const ViewAllSets = () => {
   return (
     <>
       {/* Header */}
-      <div className="sticky top-0 bg-blue-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
+      <div className="sticky top-0 bg-green-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
         <Link href="/">
           <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
             Back to Home
