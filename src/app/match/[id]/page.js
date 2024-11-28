@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
+import React, {useEffect, useState } from "react";
 import Link from "next/link";
 
 const MatchFlashcard = ({ params }) => {
@@ -8,11 +8,14 @@ const MatchFlashcard = ({ params }) => {
     const [shuffledItems, setShuffledItems] = useState([]);
     const [selectedBoxes, setSelectedBoxes] = useState([]); // Tracks selected boxes
     const [matchedBoxes, setMatchedBoxes] = useState([]);   // Tracks matched boxes
+    const [time, setTime] = useState(0);
+    const [running, setRunning] = useState(true);
 
 
     useEffect(() => {
         const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
         const set = storedSets[id];
+        let interval;
         
         if (set && set.terms) {
             // Limit to only 5 term-definition pair
@@ -25,7 +28,16 @@ const MatchFlashcard = ({ params }) => {
             const shuffled = items.sort(() => Math.random() - 0.5)
             setShuffledItems(shuffled);
         }
-    }, [id]);
+        if (running) {
+            interval = setInterval(() => {
+                setTime((prevTime) => prevTime + 10);
+            }, 10)
+        } else if (!running) {
+            clearInterval(interval)
+        }
+
+        return () => clearInterval(interval); // Cleanup on unmount or when running changes
+    }, [id, running]);
 
     const handleBoxClick = (index) => {
         if (matchedBoxes.includes(index)) {
@@ -61,6 +73,11 @@ const MatchFlashcard = ({ params }) => {
                 && shuffledItems[first].type !== shuffledItems[second].type
             ) {
                 setMatchedBoxes((prev) => [...prev, first, second]);
+                console.log(matchedBoxes.length);
+                 // Check if all items are matched
+                 if (matchedBoxes.length + 2 === shuffledItems.length) {
+                    setRunning(false); // Stop the timer when all pairs are matched
+                }
             }
             setSelectedBoxes([]);
 
@@ -77,35 +94,66 @@ const MatchFlashcard = ({ params }) => {
     }
 
     return (
-        <>
-            <div className="sticky top-0 bg-blue-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
+        <div className="flex flex-col h-screen">
+            {/*Header */}
+            <div className="sticky top-0 bg-green-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
                 <Link href={`/viewset/${id}`}>
                     <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
                         X
                     </button>
                 </Link>
+                <div className="flex-1 text-center font-bold">
+                     {/* Minutes */}
+                    <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:</span>
+                    {/* Second */}
+                    <span>{("0" + Math.floor((time / 1000) % 60)).slice(-2)}:</span>
+                    <span>{("0" + Math.floor((time / 10) % 60)).slice(-2)}</span>
+                </div>
             </div>
 
             {/* Match game body */}
 
-            <div className="grid gap-5 grid-cols-3 ml-auto mr-auto mt-10 w-4/5 sm:grid-cols-3 lg:grid-cols-4">
-                {shuffledItems.slice(0, 10).map((item, index) => (
+            <div className="flex-1 flex justify-center items-center">
+                <div className="grid justify-center grid-cols-[repeat(auto-fit,minmax(200px,1fr))] auto-rows-fr gap-5 p-10">
+                    {shuffledItems.map((item, index) => (
                     <div
                         key={index}
                         onClick={() => handleBoxClick(index)}
-                        className={`flex items-center justify-center bg-white p-6 rounded-lg shadow-lg aspect-square min-h[50px] max-w-full transition cursor-pointer ${
-                            matchedBoxes.includes(index) ? "opacity-0 pointer-events-none" : ""
+                        className={`flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${
+                        matchedBoxes.includes(index) ? "opacity-0 pointer-events-none" : ""
                         } ${
-                            selectedBoxes.includes(index) ? "border-solid border-4 border-blue-200 " : "hover:bg-gray-200"
-                        }`}>
-                        <span
-                            className="text-center break-words text-ellipsis overflow-hidden text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl leading-tight">
-                            {item.text}
-                        </span>
+                        selectedBoxes.includes(index)
+                            ? "border-solid border-4 border-blue-200"
+                            : "hover:bg-gray-200"
+                        }`}
+                    >
+                        <div className="text-center leading-tight">
+                        {item.text}
+                        </div>
                     </div>
-                ))}
+                    ))}
+                </div>
             </div>
-        </>
+
+            {!running && (
+                <>
+                    <div className="flex flex-col relative left-[40%] bottom-1/2 w-1/4 gap-10 z-50">
+                        <div className="flex items-center justify-between">
+                            <p className="text-4xl tex-wrap font-bold">Nice work! Can you match even faster?</p>
+                            <img
+                                src="https://img.icons8.com/?size=100&id=LGgNkNSbLSQq&format=png&color=000000"
+                                alt="Congratulation"
+                                className=""/>
+                        </div>
+                        <p className="text-xl text-gray-500 font-light">Try and beat your best time of <strong>{(time / 1000).toFixed(1)} seconds</strong></p>
+                        <button onClick={() => window.location.reload()} className="text-xl text-white w-1/2 bg-blue-600 rounded-lg p-5 hover:bg-blue-800 transition">
+                            Play Again
+                        </button>
+                    </div>
+                    
+                </>
+            )}
+        </div>
     )
 };
 
