@@ -1,6 +1,25 @@
+'use client'
+
 import Link from "next/link";
+import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { auth, db } from "../lib/firebase/config";
+import { useState } from "react";
+
 
 export default function Home() {
+
+  const [userId, setUserId] = useState(null);
+
+  const handleGoogle = async (e) => {
+    const provider = await new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user; // Firebase user object
+      setUserId(user.uid); // Set the user id in state
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
+    }
+  }
   return (
     <>
       {/* Navigation Bar */}
@@ -20,16 +39,20 @@ export default function Home() {
           />
         </div>
       </nav>
-
+      <button
+        onClick={handleGoogle}
+        className="bg-green-600">
+        Sign in with Google
+      </button>
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center h-screen">
+      <div className="flex flex-col items-center justify-center h-screen gap-5">
         {/* Main Title */}
         <div className="text-green-500 ml-3 text-xl font-bold">Ace-It</div>
-        <p className="text-lg text-gray-600 mb-8">
+        <p className="text-lg text-gray-600">
           Your go-to tool for creating, studying, and mastering flashcards.
         </p>
         {/* Buttons */}
-        <div className="space-x-4">
+        <div className="flex gap-5">
           <Link href="/createset">
             <button className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition">
               Create Flashcards
@@ -38,6 +61,13 @@ export default function Home() {
           <Link href="/viewset">
             <button className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition">
               View Flashcards
+            </button>
+          </Link>
+        </div>
+        <div className="flex gap-5">
+          <Link href={`/viewteam?uid=${userId}`}>
+            <button className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition">
+              View My Team
             </button>
           </Link>
         </div>
