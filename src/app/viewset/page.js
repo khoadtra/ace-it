@@ -44,7 +44,7 @@ const ViewAllSets = () => {
             {/* Content */}
             <h2 className="text-2xl font-bold text-black">{set.title}</h2>
             <p className="text-gray-600 mb-4">{set.description}</p>
-            <Link href={`/viewset/${index}`}>
+            <Link href={`/viewset/${set.id}`}>
               <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-600 transition">
                 View Set
               </button>
