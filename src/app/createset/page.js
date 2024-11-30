@@ -29,7 +29,6 @@ const CreateSet = () => {
 
   const saveFlashCardSet = () => {
     const updatedSet = {
-      id: flashcardSet.id || Date.now(), // Use existing ID if editing, otherwise generate a new one
       title: titleRef.current.value || "Untitled Set",
       description: descriptionRef.current.value || "No description provided.",
       terms: flashcardSet.terms.map((_, index) => ({
@@ -37,24 +36,21 @@ const CreateSet = () => {
         definition: definitionRefs.current[index]?.value || "",
       })),
     };
-  
+
     const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
     const editIndex = searchParams.get("edit");
     if (editIndex !== null) {
       // Update the existing set
-      const currentSetIndex = storedSets.findIndex(
-        (set) => set.id === flashcardSet.id
-      );
-      storedSets[currentSetIndex] = updatedSet;
+      storedSets[editIndex] = updatedSet;
     } else {
-      // Add a new set with a unique ID
+      // Add a new set
       storedSets.push(updatedSet);
     }
-  
+
     localStorage.setItem("flashcardSets", JSON.stringify(storedSets));
     alert("Flashcard set saved!");
   };
-    
+
   const addNewCard = () => {
     setFlashcardSet({
       ...flashcardSet,
