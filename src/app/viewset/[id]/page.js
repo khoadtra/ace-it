@@ -3,13 +3,20 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 
 const ViewSingleSet = ({ params }) => {
-  const { id } = React.use(params); // Get the set index from the route parameters
+  const { id } = params; // Get the set id from the route parameters
   const [flashcardSet, setFlashcardSet] = useState(null);
 
   useEffect(() => {
     const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-    setFlashcardSet(storedSets[id]);
+    const selectedSet = storedSets.find((set) => set.id === parseInt(id));
+    if (selectedSet) {
+      setFlashcardSet(selectedSet);
+    } else {
+      alert("Flashcard set not found!");
+    }
   }, [id]);
+
+
 
   if (!flashcardSet) {
     return (
@@ -44,12 +51,15 @@ const ViewSingleSet = ({ params }) => {
             className="h-12" />
           <span>Flashcard</span>
         </button>
-        <button className="flex flex-col items-center p-2 bg-white">
-          <img
-            src="https://img.icons8.com/?size=100&id=13720&format=png&color=000000"
-            className="h-12" />
-          <span>Quiz</span>
-        </button>
+        <Link href={`/quiz/${id}`}>
+          <button className="flex flex-col items-center p-2 bg-white">
+            <img
+              src="https://img.icons8.com/?size=100&id=13720&format=png&color=000000"
+              className="h-12"
+            />
+            <span>Quiz</span>
+          </button>
+        </Link>
         <Link href={`/match/${id}`}>
           <button className="flex flex-col items-center p-2 bg-white">
             <img
