@@ -16,6 +16,21 @@ import {
     setDoc,
 } from "firebase/firestore";
 
+// Helper function to check if a username exists
+export const checkUsernameExists = async (username) => {
+    try {
+        const usersQuery = query(
+            collection(fbdb, "users"),
+            where("userName", "==", username)
+        );
+        const querySnapshot = await getDocs(usersQuery);
+        return !querySnapshot.empty;
+    } catch (error) {
+        console.error("Error checking if username exists:", error.message);
+        throw error;
+    }
+};
+
 // Helper function to register a new user
 export const registerUser = async (username, email, password) => {
     try {
@@ -69,6 +84,17 @@ export const signInUser = async (emailOrUsername, password) => {
         return await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
         console.error("Error signing in user:", error.message);
+        throw error;
+    }
+};
+
+// Helper function to reset password
+export const resetPassword = async (email) => {
+    try {
+        await sendPasswordResetEmail(auth, email);
+        console.log("Password reset email sent!");
+    } catch (error) {
+        console.error("Error sending password reset email:", error.message);
         throw error;
     }
 };
