@@ -1,30 +1,74 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { getFlashcardSetById } from "@/lib/firebase/firestoreHelpers"; // Import Firestore helper
 
-const ViewSingleSet = ({ params }) => {
-  const { id } = use(params); // Unwrap the params promise to access the route parameter
-
+const ViewSingleSet = () => {
+  const { id } = useParams(); // Destructure id directly from params
   const [flashcardSet, setFlashcardSet] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-    const selectedSet = storedSets.find((set) => set.id === parseInt(id));
-    if (selectedSet) {
-      setFlashcardSet(selectedSet);
-    } else {
-      alert("Flashcard set not found!");
-    }
+    const fetchFlashcardSet = async () => {
+      if (!id) {
+        console.warn("Invalid ID for fetching flashcard set");
+        setLoading(false);
+        return;
+      }
+      try {
+        const selectedSet = await getFlashcardSetById(id); // Fetch set by ID
+        if (selectedSet) {
+          setFlashcardSet(selectedSet);
+        } else {
+          console.warn("Flashcard set not found for the provided ID");
+        }
+      } catch (error) {
+        console.error("Error fetching flashcard set:", error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFlashcardSet();
   }, [id]);
 
-  if (!flashcardSet) {
+  if (loading) {
     return (
       <div className="text-center text-gray-500 mt-20">
         Loading flashcard set...
       </div>
     );
   }
+
+  if (!flashcardSet) {
+    return (
+      <div className="text-center text-gray-500 mt-20">
+        Flashcard set not found.
+        <Link href="/viewset">
+          <button className="mt-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-600">
+            Back to All Sets
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  // Reusable Button Component
+  const IconButton = ({ href, iconSrc, label }) => (
+    <Link href={href}>
+      <button className="flex flex-col items-center p-2 bg-white shadow-md hover:scale-105 transition-transform rounded-lg">
+        <img
+          src={iconSrc}
+          alt={label}
+          className="h-12"
+          onError={(e) => (e.target.src = "/fallback-icon.png")} // Fallback for broken images
+        />
+        <span>{label}</span>
+      </button>
+    </Link>
+  );
 
   return (
     <>
@@ -43,33 +87,23 @@ const ViewSingleSet = ({ params }) => {
         <p className="text-lg text-gray-600 mt-2">{flashcardSet.description}</p>
       </div>
 
-      {/* Buttons */}
+      {/* Navigation Buttons */}
       <div className="flex w-3/4 ml-auto mr-auto mt-5 gap-5">
-        <button className="flex flex-col items-center p-2 bg-white">
-          <img
-            src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
-            className="h-12"
-          />
-          <span>Flashcard</span>
-        </button>
-        <Link href={`/quiz/${id}`}>
-          <button className="flex flex-col items-center p-2 bg-white">
-            <img
-              src="https://img.icons8.com/?size=100&id=13720&format=png&color=000000"
-              className="h-12"
-            />
-            <span>Quiz</span>
-          </button>
-        </Link>
-        <Link href={`/match/${id}`}>
-          <button className="flex flex-col items-center p-2 bg-white">
-            <img
-              src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
-              className="h-12"
-            />
-            <span>Match</span>
-          </button>
-        </Link>
+        <IconButton
+          href={`/viewset/${id}`}
+          iconSrc="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
+          label="Flashcard"
+        />
+        <IconButton
+          href={`/quiz/${id}`}
+          iconSrc="https://img.icons8.com/?size=100&id=13720&format=png&color=000000"
+          label="Quiz"
+        />
+        <IconButton
+          href={`/match/${id}`}
+          iconSrc="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
+          label="Match"
+        />
       </div>
 
       {/* Flashcard Viewer */}

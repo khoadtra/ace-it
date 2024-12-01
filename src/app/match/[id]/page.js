@@ -1,93 +1,92 @@
-'use client';
+"use client";
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { getFlashcardSetById } from "@/lib/firebase/firestoreHelpers"; // Import Firestore helper function
 
 const MatchFlashcard = () => {
-  const params = useParams(); // Use Next.js hook to retrieve params
+  const params = useParams();
   const router = useRouter();
-  const { id } = params; // Extract the `id` from params
+  const { id } = params;
 
   const [shuffledItems, setShuffledItems] = useState([]);
-  const [selectedBoxes, setSelectedBoxes] = useState([]); // Tracks selected boxes
-  const [matchedBoxes, setMatchedBoxes] = useState([]);   // Tracks matched boxes
+  const [selectedBoxes, setSelectedBoxes] = useState([]);
+  const [matchedBoxes, setMatchedBoxes] = useState([]);
   const [time, setTime] = useState(0);
   const [running, setRunning] = useState(true);
 
+  // Load flashcard set and initialize state
   useEffect(() => {
-    const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-    const selectedSet = storedSets.find((set) => set.id === parseInt(id)); // Find set by `id`
+    const fetchFlashcardSet = async () => {
+      try {
+        const selectedSet = await getFlashcardSetById(id); // Fetch from global collection
 
-    if (selectedSet && selectedSet.terms) {
-      // Limit to only 5 term-definition pairs
-      const newSet = selectedSet.terms.slice(0, 5);
-      const items = newSet.flatMap(card => [
-        { text: card.term, type: "term", pairId: card.term },
-        { text: card.definition, type: "definition", pairId: card.term }
-      ]);
+        if (selectedSet && selectedSet.terms) {
+          const newSet = selectedSet.terms.slice(0, 5);
+          const items = newSet.flatMap((card) => [
+            { text: card.term, type: "term", pairId: card.term },
+            { text: card.definition, type: "definition", pairId: card.term },
+          ]);
+          setShuffledItems(items.sort(() => Math.random() - 0.5));
+        } else {
+          alert("Flashcard set not found!");
+          router.push("/");
+        }
+      } catch (error) {
+        console.error("Error fetching flashcard set:", error.message);
+        alert("Failed to load flashcard set.");
+        router.push("/");
+      }
+    };
 
-      // Shuffle items
-      const shuffled = items.sort(() => Math.random() - 0.5);
-      setShuffledItems(shuffled);
-    } else {
-      alert("Flashcard set not found!");
-      router.push("/"); // Redirect to home if no set is found
-    }
+    fetchFlashcardSet();
+  }, [id, router]);
 
+  // Timer logic
+  useEffect(() => {
     let interval;
     if (running) {
-      interval = setInterval(() => {
-        setTime((prevTime) => prevTime + 10);
-      }, 10);
-    } else if (!running) {
-      clearInterval(interval);
+      interval = setInterval(() => setTime((prevTime) => prevTime + 10), 10);
     }
+    return () => clearInterval(interval);
+  }, [running]);
 
-    return () => clearInterval(interval); // Cleanup interval on unmount or when `running` changes
-  }, [id, running, router]);
-
+  // Handle box click
   const handleBoxClick = (index) => {
-    if (matchedBoxes.includes(index)) {
-      return;
-    }
+    if (matchedBoxes.includes(index) || selectedBoxes.length === 2) return;
 
-    // Only allow two boxes to be selected at once
-    if (selectedBoxes.length === 2) return;
+    const newSelection = selectedBoxes.includes(index)
+      ? selectedBoxes.filter((i) => i !== index)
+      : [...selectedBoxes, index];
 
-    const newSelection = [...selectedBoxes];
-
-    if (selectedBoxes.includes(index)) {
-      // Deselect if clicked twice
-      newSelection.splice(newSelection.indexOf(index), 1);
-      setSelectedBoxes(newSelection);
-    } else {
-      newSelection.push(index);
-      setSelectedBoxes(newSelection);
-    }
+    setSelectedBoxes(newSelection);
 
     if (newSelection.length === 2) {
       const [first, second] = newSelection;
-
-      // Check for match
-      if (
+      const isMatch =
         shuffledItems[first].pairId === shuffledItems[second].pairId &&
-        shuffledItems[first].type !== shuffledItems[second].type
-      ) {
-        setMatchedBoxes((prev) => [...prev, first, second]);
+        shuffledItems[first].type !== shuffledItems[second].type;
 
-        // Check if all items are matched
+      if (isMatch) {
+        setMatchedBoxes((prev) => [...prev, first, second]);
         if (matchedBoxes.length + 2 === shuffledItems.length) {
-          setRunning(false); // Stop the timer when all pairs are matched
+          setRunning(false);
         }
       }
-
-      // Reset selections after a short delay
       setTimeout(() => setSelectedBoxes([]), 500);
     }
   };
 
-  if (shuffledItems.length === 0) {
+  // Timer display
+  const formatTime = (ms) => {
+    const minutes = Math.floor((ms / 60000) % 60).toString().padStart(2, "0");
+    const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, "0");
+    const milliseconds = Math.floor((ms / 10) % 100).toString().padStart(2, "0");
+    return `${minutes}:${seconds}:${milliseconds}`;
+  };
+
+  if (!shuffledItems.length) {
     return (
       <div className="text-center text-gray-500 mt-20">
         Loading flashcard set...
@@ -98,78 +97,68 @@ const MatchFlashcard = () => {
   return (
     <div className="flex flex-col h-screen">
       {/* Header */}
-      <div className="sticky top-0 bg-green-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
-        <Link href={`/viewset/${id}`}>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
-            X
-          </button>
-        </Link>
-        <div className="flex-1 text-center font-bold">
-          {/* Minutes */}
-          <span>{("0" + Math.floor((time / 60000) % 60)).slice(-2)}:</span>
-          {/* Seconds */}
-          <span>{("0" + Math.floor((time / 1000) % 60)).slice(-2)}:</span>
-          {/* Milliseconds */}
-          <span>{("0" + Math.floor((time / 10) % 100)).slice(-2)}</span>
-        </div>
-      </div>
+      <Header id={id} time={time} formatTime={formatTime} />
 
       {/* Match game body */}
       <div className="flex-1 flex justify-center items-center">
-        <div className="grid justify-center grid-cols-[repeat(auto-fit,minmax(200px,1fr))] auto-rows-fr gap-5 p-10">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] auto-rows-fr gap-5 p-10">
           {shuffledItems.map((item, index) => (
-            <div
+            <FlashcardBox
               key={index}
-              onClick={() => handleBoxClick(index)}
-              className={`flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${
-                matchedBoxes.includes(index) ? "opacity-0 pointer-events-none" : ""
-              } ${
-                selectedBoxes.includes(index)
-                  ? "border-solid border-4 border-blue-200"
-                  : "hover:bg-gray-200"
-              }`}
-            >
-              <div className="text-center leading-tight">{item.text}</div>
-            </div>
+              item={item}
+              index={index}
+              handleClick={handleBoxClick}
+              isMatched={matchedBoxes.includes(index)}
+              isSelected={selectedBoxes.includes(index)}
+            />
           ))}
         </div>
       </div>
 
       {/* Game complete screen */}
-    {!running && (
-        <div className="fixed top-0 left-0 w-full h-full bg-white z-50 flex flex-col">
-            {/* Header */}
-            <div className="sticky top-0 bg-green-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
-            <Link href={`/viewset/${id}`}>
-                <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
-                Back to Flashcard Set
-                </button>
-            </Link>
-            <div className="flex-1 text-center font-bold">
-                Ace-It
-            </div>
-            <Link href="/">
-                <button className="bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-green-600 transition">
-                Home
-                </button>
-            </Link>
-            </div>
-            
-            {/* Completion Content */}
-            <div className="flex flex-1 flex-col items-center justify-center">
-            <h1 className="text-4xl font-bold mb-4">Nice work!</h1>
-            <p className="text-xl">Your time: {(time / 1000).toFixed(2)} seconds</p>
-            <button
-                onClick={() => window.location.reload()}
-                className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 mt-4"
-            >
-                Play Again
-            </button>
-            </div>
-        </div>
-    )}
+      {!running && <CompletionScreen id={id} time={time} formatTime={formatTime} />}
     </div>
   );
 };
+
+// Header Component
+const Header = ({ id, time, formatTime }) => (
+  <div className="sticky top-0 bg-green-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
+    <Link href={`/viewset/${id}`}>
+      <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
+        X
+      </button>
+    </Link>
+    <div className="flex-1 text-center font-bold">{formatTime(time)}</div>
+  </div>
+);
+
+// Flashcard Box Component
+const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected }) => (
+  <div
+    onClick={() => handleClick(index)}
+    className={`flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${isMatched ? "opacity-0 pointer-events-none" : ""
+      } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"}`}
+  >
+    <div className="text-center leading-tight">{item.text}</div>
+  </div>
+);
+
+// Completion Screen Component
+const CompletionScreen = ({ id, time, formatTime }) => (
+  <div className="fixed top-0 left-0 w-full h-full bg-white z-50 flex flex-col">
+    <Header id={id} time={time} formatTime={formatTime} />
+    <div className="flex-1 flex flex-col items-center justify-center">
+      <h1 className="text-4xl font-bold mb-4">Nice work!</h1>
+      <p className="text-xl">Your time: {(time / 1000).toFixed(2)} seconds</p>
+      <button
+        onClick={() => window.location.reload()}
+        className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 mt-4"
+      >
+        Play Again
+      </button>
+    </div>
+  </div>
+);
 
 export default MatchFlashcard;

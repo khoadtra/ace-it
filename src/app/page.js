@@ -2,43 +2,54 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/firebase/authContext";
+import { useEffect } from "react";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase/config";
 
 export default function Home() {
-
+  const { user, loading } = useAuth();
   const router = useRouter();
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-
-      const query = e.target.value.trim();
-
-      if (query) {
-        router.push(`/search?query=${encodeURIComponent(query)}`);
-      }
+  // Redirect to login page if not logged in
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push("/account/login");
     }
+  }, [user, loading, router]);
+
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/account/login"); // Redirect to login after logout
+    } catch (error) {
+      console.error("Error signing out:", error.message);
+    }
+  };
+
+  // Handle Search
+  const handleSearch = (query) => {
+    if (query.trim()) {
+      router.push(`/search?query=${encodeURIComponent(query.trim())}`);
+    }
+  };
+
+  // Show loading screen while checking authentication
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
   }
+
+  if (!user) {
+    return null; // Prevent rendering until redirect completes
+  }
+
   return (
     <>
-      {/* Navigation Bar */}
-      <nav className="bg-green-100 flex justify-between items-center h-14 px-6">
-        {/* Logo and Title */}
-        <div className="flex items-center">
-          <div className="h-10 w-10 bg-green-500 text-white flex items-center justify-center rounded-full text-xl font-bold">
-            A
-          </div>
-          <div className="text-green-900 ml-3 text-xl font-bold">Ace-It</div>
-        </div>
-        {/* Search Bar */}
-        <div className="flex w-full max-w-lg">
-          <input
-            className="bg-gray-50 text-gray-700 flex-grow rounded p-2 pl-10 outline-gray-300 bg-no-repeat bg-[length:1rem] bg-[position:5px_50%] bg-[url('https://img.icons8.com/?size=100&id=59878&format=png&color=000000')]"
-            placeholder="Search keywords"
-            onKeyDown={handleKeyDown}
-          />
-        </div>
-      </nav>
-
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center h-screen">
         {/* Main Title */}

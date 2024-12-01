@@ -2,6 +2,8 @@
 import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { saveFlashcardSet, getFlashcardSetById } from "@/lib/firebase/firestoreHelpers";
+import { useAuth } from "@/lib/firebase/authContext";
 
 const CreateSet = () => {
   const titleRef = useRef(null);
@@ -9,79 +11,109 @@ const CreateSet = () => {
   const termRefs = useRef([]);
   const definitionRefs = useRef([]);
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   const [flashcardSet, setFlashcardSet] = useState({
+    id: null,
     title: "",
     description: "",
     terms: [{ term: "", definition: "" }],
   });
 
-  useEffect(() => {
-    const editId = searchParams.get("edit"); // Get the id from the query parameter
-    if (editId !== null) {
-      const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-      const setToEdit = storedSets.find((set) => set.id === parseInt(editId));
-      if (setToEdit) {
-        setFlashcardSet(setToEdit);
-      }
-    }
-  }, [searchParams]);
+  const [loading, setLoading] = useState(false);
 
-  const saveFlashCardSet = () => {
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId && user) {
+      const fetchFlashcardSet = async () => {
+        setLoading(true);
+        try {
+          const setToEdit = await getFlashcardSetById(editId);
+          if (setToEdit) {
+            setFlashcardSet(setToEdit);
+          } else {
+            alert("Flashcard set not found. Redirecting to create a new set.");
+          }
+        } catch (error) {
+          console.error("Error fetching flashcard set:", error.message);
+          alert("Failed to fetch flashcard set.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchFlashcardSet();
+    }
+  }, [searchParams, user]);
+
+  const saveFlashCardSet = async () => {
+    if (!user) {
+      alert("You must be logged in to save a flashcard set.");
+      return;
+    }
+
     const updatedSet = {
-      id: flashcardSet.id || Date.now(), // Use existing ID if editing, otherwise generate a new one
-      title: titleRef.current.value || "Untitled Set",
-      description: descriptionRef.current.value || "No description provided.",
+      id: flashcardSet.id || Date.now().toString(),
+      title: titleRef.current.value.trim() || "Untitled Set",
+      description: descriptionRef.current.value.trim() || "No description provided.",
       terms: flashcardSet.terms.map((_, index) => ({
-        term: termRefs.current[index]?.value || "",
-        definition: definitionRefs.current[index]?.value || "",
+        term: termRefs.current[index]?.value.trim() || "",
+        definition: definitionRefs.current[index]?.value.trim() || "",
       })),
+      ownerName: user.userName,
+      iconColor: user.iconColor || "#cccccc",
     };
 
-    const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-    const editIndex = searchParams.get("edit");
-    if (editIndex !== null) {
-      // Update the existing set
-      const currentSetIndex = storedSets.findIndex(
-        (set) => set.id === flashcardSet.id
-      );
-      storedSets[currentSetIndex] = updatedSet;
-    } else {
-      // Add a new set with a unique ID
-      storedSets.push(updatedSet);
+    // Validate terms
+    const invalidTerms = updatedSet.terms.some(
+      (card) => !card.term || !card.definition
+    );
+    if (invalidTerms) {
+      alert("All terms and definitions must be filled out before saving.");
+      return;
     }
 
-    localStorage.setItem("flashcardSets", JSON.stringify(storedSets));
-    alert("Flashcard set saved!");
+    try {
+      await saveFlashcardSet(user.uid, updatedSet);
+      alert("Flashcard set saved successfully!");
+    } catch (error) {
+      console.error("Error saving flashcard set:", error.message);
+      alert("Failed to save flashcard set. Please try again.");
+    }
   };
 
   const addNewCard = () => {
-    setFlashcardSet({
-      ...flashcardSet,
-      terms: [...flashcardSet.terms, { term: "", definition: "" }],
-    });
+    setFlashcardSet((prevSet) => ({
+      ...prevSet,
+      terms: [...prevSet.terms, { term: "", definition: "" }],
+    }));
   };
 
   const deleteCard = (indexToDelete) => {
-    setFlashcardSet({
-      ...flashcardSet,
-      terms: flashcardSet.terms.filter((_, index) => index !== indexToDelete),
-    });
+    setFlashcardSet((prevSet) => ({
+      ...prevSet,
+      terms: prevSet.terms.filter((_, index) => index !== indexToDelete),
+    }));
   };
+
+  if (loading) {
+    return <div className="text-center mt-20">Loading...</div>;
+  }
 
   return (
     <>
       {/* Header */}
-      <div className="sticky top-0 bg-blue-100 h-14 flex items-center border-b-2 border-solid border-black px-4">
-        <Link href="/">
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
-            Back to Home
-          </button>
-        </Link>
-        <div className="text-lg font-bold ml-auto mr-auto">
-          Create or Edit Flashcard Set
+      <header className="top-0 bg-blue-100 h-14 flex items-center justify-between px-4 border-b-2 border-solid border-black z-10">
+        <div>
+          <Link href="/">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-blue-600 transition">
+              Back to Home
+            </button>
+          </Link>
         </div>
-        <div className="ml-auto mr-20">
+        <h1 className="text-lg font-bold mx-auto text-center">
+          {flashcardSet.id ? "Edit Flashcard Set" : "Create Flashcard Set"}
+        </h1>
+        <div>
           <button
             className="bg-blue-500 text-white rounded-lg px-4 py-1"
             onClick={saveFlashCardSet}
@@ -89,69 +121,70 @@ const CreateSet = () => {
             Save Set
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Title, Description */}
-      <div className="w-full px-10 py-8">
-        <input
-          type="text"
-          ref={titleRef}
-          defaultValue={flashcardSet.title}
-          placeholder="Enter a title..."
-          className="w-full text-4xl font-bold text-gray-400 placeholder:text-gray-300 bg-transparent outline-none mb-4"
-          onChange={(e) => (e.target.style.color = e.target.value ? "black" : "gray")}
-        />
-        <textarea
-          ref={descriptionRef}
-          defaultValue={flashcardSet.description}
-          placeholder="Add a description..."
-          className="w-full text-xl font-semibold text-gray-400 placeholder:text-gray-300 bg-transparent outline-none resize-none"
-          onChange={(e) => (e.target.style.color = e.target.value ? "black" : "gray")}
-        />
-      </div>
+      {/* Main Content */}
+      <main className="mt-14 px-10 py-8">
+        {/* Title and Description */}
+        <section className="mb-8">
+          <input
+            type="text"
+            ref={titleRef}
+            defaultValue={flashcardSet.title}
+            placeholder="Enter a title..."
+            className="w-full text-4xl font-bold text-gray-400 placeholder:text-gray-300 bg-transparent outline-none mb-4"
+            onChange={(e) =>
+              (e.target.style.color = e.target.value ? "black" : "gray")
+            }
+          />
+          <textarea
+            ref={descriptionRef}
+            defaultValue={flashcardSet.description}
+            placeholder="Add a description..."
+            className="w-full text-xl font-semibold text-gray-400 placeholder:text-gray-300 bg-transparent outline-none resize-none"
+            onChange={(e) =>
+              (e.target.style.color = e.target.value ? "black" : "gray")
+            }
+          />
+        </section>
 
-      {/* Flashcards */}
-      <div className="flex flex-col items-center mt-8">
-        {flashcardSet.terms.map((card, index) => (
-          <div
-            key={index}
-            className="relative bg-white mb-6 rounded-lg shadow-lg p-6 w-3/4 hover:scale-105 transition-transform"
-          >
-            {/* Delete Button */}
+        {/* Flashcards */}
+        <section className="flex flex-col items-center">
+          {flashcardSet.terms.map((card, index) => (
             <div
-              className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white flex items-center justify-center rounded-full cursor-pointer opacity-0 hover:opacity-100 transition-opacity"
-              onClick={() => deleteCard(index)}
+              key={index}
+              className="relative bg-white mb-6 rounded-lg shadow-lg p-6 w-3/4 hover:scale-105 transition-transform"
             >
-              X
+              <button
+                className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white flex items-center justify-center rounded-full cursor-pointer hover:opacity-100 transition-opacity"
+                onClick={() => deleteCard(index)}
+              >
+                X
+              </button>
+              <div className="flex gap-4 justify-between">
+                <textarea
+                  ref={(el) => (termRefs.current[index] = el)}
+                  defaultValue={card.term}
+                  placeholder="Term"
+                  className="w-1/2 tracking-wide outline-none resize-none border-b-2 border-black p-1 focus:border-green-500"
+                />
+                <textarea
+                  ref={(el) => (definitionRefs.current[index] = el)}
+                  defaultValue={card.definition}
+                  placeholder="Definition"
+                  className="w-1/2 tracking-wide outline-none resize-none border-b-2 border-black p-1 focus:border-green-500"
+                />
+              </div>
             </div>
-            <div className="flex gap-4 justify-between">
-              {/* Term Input */}
-              <textarea
-                type="text"
-                ref={(el) => (termRefs.current[index] = el)}
-                defaultValue={card.term}
-                placeholder="term"
-                className="w-1/2 tracking-wide outline-none resize-none border-b-2 border-black p-1 focus:border-green-500"
-              ></textarea>
-
-              {/* Definition Input */}
-              <textarea
-                type="text"
-                ref={(el) => (definitionRefs.current[index] = el)}
-                defaultValue={card.definition}
-                placeholder="definition"
-                className="w-1/2 tracking-wide outline-none resize-none border-b-2 border-black p-1 focus:border-green-500"
-              ></textarea>
-            </div>
-          </div>
-        ))}
-        <button
-          onClick={addNewCard}
-          className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-green-600 transition mt-4"
-        >
-          Add New Card
-        </button>
-      </div>
+          ))}
+          <button
+            onClick={addNewCard}
+            className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-green-600 transition mt-4"
+          >
+            Add New Card
+          </button>
+        </section>
+      </main>
     </>
   );
 };
