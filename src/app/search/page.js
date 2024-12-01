@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect } from "react";
 import { getDocs, collection } from "firebase/firestore";
 import { fbdb } from "@/lib/firebase/config";
 import Link from "next/link";
 
+// PreviewModal component for showing the flashcards
 const PreviewModal = ({ flashcards, onClose }) => (
     <>
         {/* Backdrop */}
@@ -32,6 +33,7 @@ const PreviewModal = ({ flashcards, onClose }) => (
     </>
 );
 
+// Main Search component
 const Search = () => {
     const searchParams = useSearchParams();
     const query = searchParams.get("query");
@@ -64,16 +66,6 @@ const Search = () => {
 
         fetchFlashcardSets();
     }, [query]);
-
-    const handleKeyDown = (e) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            const searchQuery = e.target.value.trim();
-            if (searchQuery) {
-                router.push(`/search?query=${encodeURIComponent(searchQuery)}`);
-            }
-        }
-    };
 
     return (
         <>
@@ -129,4 +121,11 @@ const Search = () => {
     );
 };
 
-export default Search;
+// Wrap Search component with Suspense
+const SearchPage = () => (
+    <Suspense fallback={<div>Loading...</div>}>
+        <Search />
+    </Suspense>
+);
+
+export default SearchPage;
