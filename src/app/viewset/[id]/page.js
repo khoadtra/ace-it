@@ -86,7 +86,7 @@ const ViewSingleSet = ({ params }) => {
         <Link
           href={{
             pathname: "/createset",
-            query: { edit: id },
+            query: { edit: id }, // Pass the id of the current set as a query parameter
           }}
         >
           <button className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-green-600 transition mt-6">

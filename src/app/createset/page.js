@@ -17,15 +17,15 @@ const CreateSet = () => {
   });
 
   useEffect(() => {
-    const editIndex = searchParams.get("edit");
-    if (editIndex !== null) {
+    const editId = searchParams.get("edit"); // Get the id from the query parameter
+    if (editId !== null) {
       const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
-      const setToEdit = storedSets[editIndex];
+      const setToEdit = storedSets.find((set) => set.id === parseInt(editId));
       if (setToEdit) {
         setFlashcardSet(setToEdit);
       }
     }
-  }, [searchParams]);
+  }, [searchParams]);  
 
   const saveFlashCardSet = () => {
     const updatedSet = {
@@ -54,7 +54,7 @@ const CreateSet = () => {
     localStorage.setItem("flashcardSets", JSON.stringify(storedSets));
     alert("Flashcard set saved!");
   };
-    
+
   const addNewCard = () => {
     setFlashcardSet({
       ...flashcardSet,
