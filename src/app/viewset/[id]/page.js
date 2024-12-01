@@ -1,9 +1,11 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 
 const ViewSingleSet = ({ params }) => {
-  const { id } = params; // Get the set id from the route parameters
+  const { id } = use(params); // Unwrap the params promise to access the route parameter
+
   const [flashcardSet, setFlashcardSet] = useState(null);
 
   useEffect(() => {
@@ -15,8 +17,6 @@ const ViewSingleSet = ({ params }) => {
       alert("Flashcard set not found!");
     }
   }, [id]);
-
-
 
   if (!flashcardSet) {
     return (
@@ -48,7 +48,8 @@ const ViewSingleSet = ({ params }) => {
         <button className="flex flex-col items-center p-2 bg-white">
           <img
             src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
-            className="h-12" />
+            className="h-12"
+          />
           <span>Flashcard</span>
         </button>
         <Link href={`/quiz/${id}`}>
@@ -64,11 +65,11 @@ const ViewSingleSet = ({ params }) => {
           <button className="flex flex-col items-center p-2 bg-white">
             <img
               src="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
-              className="h-12" />
+              className="h-12"
+            />
             <span>Match</span>
           </button>
         </Link>
-      
       </div>
 
       {/* Flashcard Viewer */}

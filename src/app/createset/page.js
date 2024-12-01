@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState, useRef } from "react";
+import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -25,7 +25,7 @@ const CreateSet = () => {
         setFlashcardSet(setToEdit);
       }
     }
-  }, [searchParams]);  
+  }, [searchParams]);
 
   const saveFlashCardSet = () => {
     const updatedSet = {
@@ -37,7 +37,7 @@ const CreateSet = () => {
         definition: definitionRefs.current[index]?.value || "",
       })),
     };
-  
+
     const storedSets = JSON.parse(localStorage.getItem("flashcardSets")) || [];
     const editIndex = searchParams.get("edit");
     if (editIndex !== null) {
@@ -50,7 +50,7 @@ const CreateSet = () => {
       // Add a new set with a unique ID
       storedSets.push(updatedSet);
     }
-  
+
     localStorage.setItem("flashcardSets", JSON.stringify(storedSets));
     alert("Flashcard set saved!");
   };
@@ -156,4 +156,10 @@ const CreateSet = () => {
   );
 };
 
-export default CreateSet;
+export default function CreateSetPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateSet />
+    </Suspense>
+  );
+}
