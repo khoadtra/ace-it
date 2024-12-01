@@ -79,7 +79,7 @@ const Search = () => {
         <>
             {/* Main Content */}
             <h1 className="text-2xl my-5 font-medium w-[80%] mx-auto">
-                Results for "{query || "All Sets"}"
+                Results for &quot;{query || "All Sets"}&quot;
             </h1>
 
             <div className="flex flex-col gap-5 w-[80%] mx-auto">
