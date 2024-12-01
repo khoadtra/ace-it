@@ -1,6 +1,23 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+
+  const router = useRouter();
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      const query = e.target.value.trim();
+
+      if (query) {
+        router.push(`/search?query=${encodeURIComponent(query)}`);
+      }
+    }
+  }
   return (
     <>
       {/* Navigation Bar */}
@@ -17,6 +34,7 @@ export default function Home() {
           <input
             className="bg-gray-50 text-gray-700 flex-grow rounded p-2 pl-10 outline-gray-300 bg-no-repeat bg-[length:1rem] bg-[position:5px_50%] bg-[url('https://img.icons8.com/?size=100&id=59878&format=png&color=000000')]"
             placeholder="Search keywords"
+            onKeyDown={handleKeyDown}
           />
         </div>
       </nav>
