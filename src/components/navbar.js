@@ -16,8 +16,8 @@ export default function Navbar() {
         "/account/login",
         "/account/register",
         "/account/forgot-password",
-        "/createset", // Exclude Navbar on the createset page
-        "/viewset", // Exclude Navbar on the viewset page
+        "/createset",
+        "/viewset",
     ];
 
     // Paths with dynamic segments (e.g., /match/[id], /quiz/[id])

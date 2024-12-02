@@ -63,7 +63,6 @@ const ForgotPasswordPage = () => {
                     Reset Password
                 </button>
 
-                {/* Centered Remember Password Link */}
                 <div className="mt-4 text-center">
                     <p className="text-sm text-gray-600">
                         Remember your password?{' '}
