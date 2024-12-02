@@ -90,7 +90,7 @@ const ViewSingleSet = () => {
       {/* Navigation Buttons */}
       <div className="flex w-3/4 ml-auto mr-auto mt-5 gap-5">
         <IconButton
-          href={`/viewset/${id}`}
+          href={`/flashcard`}
           iconSrc="https://img.icons8.com/?size=100&id=21743&format=png&color=000000"
           label="Flashcard"
         />

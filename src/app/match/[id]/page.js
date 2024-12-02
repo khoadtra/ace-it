@@ -12,6 +12,7 @@ const MatchFlashcard = () => {
 
   const [shuffledItems, setShuffledItems] = useState([]);
   const [selectedBoxes, setSelectedBoxes] = useState([]);
+  const [incorrectBoxes, setIncorrectBoxes] = useState([]);  // Track incorrect selections
   const [matchedBoxes, setMatchedBoxes] = useState([]);
   const [time, setTime] = useState(0);
   const [running, setRunning] = useState(true);
@@ -73,6 +74,9 @@ const MatchFlashcard = () => {
         if (matchedBoxes.length + 2 === shuffledItems.length) {
           setRunning(false);
         }
+      } else {
+        setIncorrectBoxes([first, second]);
+        setTimeout(() => setIncorrectBoxes([]), 500);
       }
       setTimeout(() => setSelectedBoxes([]), 500);
     }
@@ -101,7 +105,7 @@ const MatchFlashcard = () => {
 
       {/* Match game body */}
       <div className="flex-1 flex justify-center items-center">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] auto-rows-fr gap-5 p-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 auto-rows-fr gap-5 p-10">
           {shuffledItems.map((item, index) => (
             <FlashcardBox
               key={index}
@@ -110,6 +114,7 @@ const MatchFlashcard = () => {
               handleClick={handleBoxClick}
               isMatched={matchedBoxes.includes(index)}
               isSelected={selectedBoxes.includes(index)}
+              isIncorrect={incorrectBoxes.includes(index)}
             />
           ))}
         </div>
@@ -134,11 +139,12 @@ const Header = ({ id, time, formatTime }) => (
 );
 
 // Flashcard Box Component
-const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected }) => (
+const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected, isIncorrect }) => (
   <div
     onClick={() => handleClick(index)}
-    className={`flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${isMatched ? "opacity-0 pointer-events-none" : ""
-      } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"}`}
+    className={`w-[250px] flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${isMatched ? "opacity-0 pointer-events-none" : ""
+      } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"}
+        ${isIncorrect? "animate-shake border-red-500 border-4" : ""}`}
   >
     <div className="text-center leading-tight">{item.text}</div>
   </div>

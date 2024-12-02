@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { getFlashcardSets, deleteFlashcardSet } from "@/lib/firebase/firestoreHelpers"; // Import the correct helper functions
+import { useAuth } from "@/lib/firebase/authContext";
 
 // Reusable Card Component
 const FlashcardSetCard = ({ set, onDelete }) => (
@@ -31,11 +32,17 @@ const FlashcardSetCard = ({ set, onDelete }) => (
 
 const ViewAllSets = () => {
   const [flashcardSets, setFlashcardSets] = useState([]);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchFlashcardSets = async () => {
+      if (!user) {
+        alert("You must be logged in to view your flashcard set.");
+        return;
+      }
+
       try {
-        const sets = await getFlashcardSets(); // Fetch all sets by omitting userId
+        const sets = await getFlashcardSets(user.uid); // Fetch all sets by userId
         setFlashcardSets(sets);
       } catch (error) {
         console.error("Error fetching flashcard sets:", error.message);
