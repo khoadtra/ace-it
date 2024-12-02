@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -57,22 +57,22 @@ export default function FlashcardGrid() {
 }
 
 const FlashcardFlip = ({ term, definition }) => {
-    const [isFlipped, setIsFlipped] = useState(false);
-  
-    return (
-      <div
-        className={`card ${isFlipped ? "flip" : ""}`}
-        onClick={() => setIsFlipped(!isFlipped)}
-      >
-        {/* Front Side */}
-        <div className="front">
-          {term}
-        </div>
+  const [isFlipped, setIsFlipped] = useState(false);
 
-        {/* Back Side */}
-        <div className="back">
-          {definition}
-        </div>
+  return (
+    <div
+      className={`card ${isFlipped ? "flip" : ""}`}
+      onClick={() => setIsFlipped(!isFlipped)}
+    >
+      {/* Front Side */}
+      <div className="front text-2xl font-semibold text-gray-800 p-4">
+        {term}
       </div>
-    );
-  };
+
+      {/* Back Side */}
+      <div className="back text-xl font-medium text-gray-600 p-4">
+        {definition}
+      </div>
+    </div>
+  );
+};
