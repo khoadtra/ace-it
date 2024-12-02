@@ -1,6 +1,6 @@
 import { GoogleAuthProvider } from "firebase/auth";
 import * as firebaseui from "firebaseui";
-import { auth } from "@/lib/firebase/config"; // Import your Firebase configuration
+import { auth } from "@/lib/firebase/config";
 
 // FirebaseUI config for Google Sign-In
 const getUiConfig = () => ({
@@ -13,7 +13,7 @@ const getUiConfig = () => ({
             // UI shown callback
         },
         signInSuccessWithAuthResult: (authResult) => {
-            window.location.href = "/"; // Redirect to home
+            window.location.href = "/";
             return false;
         },
         signInFailure: (error) => {
