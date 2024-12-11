@@ -1,7 +1,9 @@
 ## Getting Started
 
 Instruction:
-First run this command to install dependencies: npm I
+
+First run this command to install dependencies: 
+npm I
 
 Then run one of these:
 ```bash
