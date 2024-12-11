@@ -13,3 +13,4 @@ pnpm dev
 # or
 bun dev
 ```
+Website deployed on Vercel: https://ace-it-six.vercel.app/
