@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import React, { Suspense, useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { getDocs, collection } from "firebase/firestore";
 import { fbdb } from "@/lib/firebase/config";
-import Link from "next/link";
 
 // PreviewModal component for showing the flashcards
 const PreviewModal = ({ flashcards, onClose }) => (
@@ -15,6 +15,7 @@ const PreviewModal = ({ flashcards, onClose }) => (
         {/* Modal */}
         <div className="fixed z-50 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white w-[70%] lg:w-[50%] max-h-[80vh] overflow-y-auto rounded-lg shadow-lg">
             <div className="flex flex-col gap-4 p-10">
+                {/* Close button */}
                 <button
                     className="text-xl text-gray-400 w-full text-right -mb-5"
                     onClick={onClose}
@@ -22,6 +23,7 @@ const PreviewModal = ({ flashcards, onClose }) => (
                     X
                 </button>
                 <h1 className="text-2xl font-bold">Preview</h1>
+                {/* Flashcard terms and definitions */}
                 {flashcards.map((card, index) => (
                     <div key={index}>
                         <p className="text-lg font-semibold">{card.term}</p>
@@ -36,31 +38,41 @@ const PreviewModal = ({ flashcards, onClose }) => (
 // Main Search component
 const Search = () => {
     const searchParams = useSearchParams();
-    const query = searchParams.get("query");
-    const router = useRouter();
-    const [flashcardSets, setFlashcardSets] = useState([]);
-    const [selectedSet, setSelectedSet] = useState(null);
+    const query = searchParams.get("query"); // Get the search query from the URL
 
+    const [flashcardSets, setFlashcardSets] = useState([]); // Stores flashcard sets
+    const [selectedSet, setSelectedSet] = useState(null); // Selected set for preview
+    const [error, setError] = useState(null); // Error state
+
+    /**
+     * Fetches flashcard sets from Firestore and applies filtering based on the search query.
+     */
     useEffect(() => {
         const fetchFlashcardSets = async () => {
+            setError(null); // Reset error state
             try {
-                const snapshot = await getDocs(collection(fbdb, "flashcardSets"));
+                const snapshot = await getDocs(collection(fbdb, "flashcardSets")); // Fetch all sets
                 const allSets = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
+
                 if (query) {
-                    // Filter by search query
+                    // Filter sets based on the search query
                     const filteredSets = allSets.filter((set) =>
                         set.title.toLowerCase().includes(query.toLowerCase())
                     );
                     setFlashcardSets(filteredSets);
+
+                    if (filteredSets.length === 0) {
+                        setError("No flashcard sets found matching your search.");
+                    }
                 } else {
-                    // Show all sets if no query
-                    setFlashcardSets(allSets);
+                    setFlashcardSets(allSets); // Show all sets if no query
                 }
-            } catch (error) {
-                console.error("Error fetching flashcard sets:", error.message);
+            } catch (err) {
+                console.error("Error fetching flashcard sets:", err.message);
+                setError("Failed to load flashcard sets. Please try again later.");
             }
         };
 
@@ -74,6 +86,12 @@ const Search = () => {
                 Results for &quot;{query || "All Sets"}&quot;
             </h1>
 
+            {/* Error Message */}
+            {error && (
+                <div className="text-center text-red-500 mb-4">{error}</div>
+            )}
+
+            {/* Flashcard Sets List */}
             <div className="flex flex-col gap-5 w-[80%] mx-auto">
                 <p className="text-md font-medium">Flashcard sets</p>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -82,13 +100,15 @@ const Search = () => {
                             key={set.id}
                             className="bg-white border border-solid border-gray-300 rounded-lg p-3"
                         >
+                            {/* Set Title */}
                             <h1 className="text-md font-bold py-2">{set.title}</h1>
+                            {/* Number of Terms */}
                             <p className="text-sm font-medium bg-blue-200 w-fit rounded-md p-1">
                                 {set.terms.length} Terms
                             </p>
                             <div className="flex justify-between items-center mt-3">
+                                {/* Owner Information */}
                                 <div className="flex items-center space-x-2">
-                                    {/* Adjusted icon and username size */}
                                     <div
                                         className="h-8 w-8 flex items-center justify-center rounded-full text-sm font-bold text-white"
                                         style={{ backgroundColor: set.iconColor || "#cccccc" }}
@@ -99,6 +119,7 @@ const Search = () => {
                                         {set.ownerName || "Unknown"}
                                     </p>
                                 </div>
+                                {/* Preview Button */}
                                 <button
                                     className="p-2 text-gray-400 font-medium bg-white rounded-lg border border-solid border-gray-300 h-fit hover:bg-gray-100"
                                     onClick={() => setSelectedSet(set)}
@@ -111,6 +132,7 @@ const Search = () => {
                 </div>
             </div>
 
+            {/* Preview Modal */}
             {selectedSet && (
                 <PreviewModal
                     flashcards={selectedSet.terms}
