@@ -8,54 +8,71 @@ import { getFlashcardSetById } from "@/lib/firebase/firestoreHelpers"; // Import
 const MatchFlashcard = () => {
   const params = useParams();
   const router = useRouter();
-  const { id } = params;
+  const { id } = params; // Extract flashcard set ID from URL parameters
 
-  const [shuffledItems, setShuffledItems] = useState([]);
-  const [selectedBoxes, setSelectedBoxes] = useState([]);
-  const [matchedBoxes, setMatchedBoxes] = useState([]);
-  const [time, setTime] = useState(0);
-  const [running, setRunning] = useState(true);
+  // State variables
+  const [shuffledItems, setShuffledItems] = useState([]); // Store shuffled flashcard terms and definitions
+  const [selectedBoxes, setSelectedBoxes] = useState([]); // Track currently selected boxes
+  const [incorrectBoxes, setIncorrectBoxes] = useState([]); // Track boxes with incorrect matches
+  const [matchedBoxes, setMatchedBoxes] = useState([]); // Track matched boxes
+  const [time, setTime] = useState(0); // Track elapsed time
+  const [running, setRunning] = useState(true); // Manage timer state
 
-  // Load flashcard set and initialize state
+  /**
+   * Fetch flashcard set and initialize game state
+   */
   useEffect(() => {
+    if (!id) {
+      alert("Invalid flashcard set ID."); // Handle invalid or missing ID
+      router.push("/"); // Redirect to home page
+      return;
+    }
+
     const fetchFlashcardSet = async () => {
       try {
-        const selectedSet = await getFlashcardSetById(id); // Fetch from global collection
+        const selectedSet = await getFlashcardSetById(id); // Fetch the flashcard set by ID
 
-        if (selectedSet && selectedSet.terms) {
+        if (selectedSet?.terms?.length > 0) {
+          // Take the first 5 terms and shuffle them for the game
           const newSet = selectedSet.terms.slice(0, 5);
           const items = newSet.flatMap((card) => [
             { text: card.term, type: "term", pairId: card.term },
             { text: card.definition, type: "definition", pairId: card.term },
           ]);
-          setShuffledItems(items.sort(() => Math.random() - 0.5));
+          setShuffledItems(items.sort(() => Math.random() - 0.5)); // Randomize order of items
         } else {
-          alert("Flashcard set not found!");
+          alert("No terms available in this flashcard set."); // Handle empty flashcard set
           router.push("/");
         }
       } catch (error) {
-        console.error("Error fetching flashcard set:", error.message);
-        alert("Failed to load flashcard set.");
-        router.push("/");
+        console.error("Error fetching flashcard set:", error.message); // Log error
+        alert("Failed to load the flashcard set. Please try again."); // Inform the user
+        router.push("/"); // Redirect to home page
       }
     };
 
     fetchFlashcardSet();
   }, [id, router]);
 
-  // Timer logic
+  /**
+   * Timer logic to track elapsed time
+   */
   useEffect(() => {
     let interval;
     if (running) {
-      interval = setInterval(() => setTime((prevTime) => prevTime + 10), 10);
+      interval = setInterval(() => setTime((prevTime) => prevTime + 10), 10); // Increment time every 10ms
     }
-    return () => clearInterval(interval);
+    return () => clearInterval(interval); // Cleanup interval when component unmounts or timer stops
   }, [running]);
 
-  // Handle box click
+  /**
+   * Handles user interaction with a box
+   */
   const handleBoxClick = (index) => {
+    // Ignore clicks on already matched boxes or if two boxes are selected
     if (matchedBoxes.includes(index) || selectedBoxes.length === 2) return;
 
+    // Add or remove the clicked box from the selection
     const newSelection = selectedBoxes.includes(index)
       ? selectedBoxes.filter((i) => i !== index)
       : [...selectedBoxes, index];
@@ -63,22 +80,28 @@ const MatchFlashcard = () => {
     setSelectedBoxes(newSelection);
 
     if (newSelection.length === 2) {
+      // Check if the two selected boxes form a match
       const [first, second] = newSelection;
       const isMatch =
         shuffledItems[first].pairId === shuffledItems[second].pairId &&
         shuffledItems[first].type !== shuffledItems[second].type;
 
       if (isMatch) {
-        setMatchedBoxes((prev) => [...prev, first, second]);
+        setMatchedBoxes((prev) => [...prev, first, second]); // Add matched boxes to the matched list
         if (matchedBoxes.length + 2 === shuffledItems.length) {
-          setRunning(false);
+          setRunning(false); // Stop timer if all boxes are matched
         }
+      } else {
+        setIncorrectBoxes([first, second]); // Highlight incorrect boxes
+        setTimeout(() => setIncorrectBoxes([]), 500); // Clear incorrect boxes after a delay
       }
-      setTimeout(() => setSelectedBoxes([]), 500);
+      setTimeout(() => setSelectedBoxes([]), 500); // Reset selection after a delay
     }
   };
 
-  // Timer display
+  /**
+   * Formats time in mm:ss:ms format for display
+   */
   const formatTime = (ms) => {
     const minutes = Math.floor((ms / 60000) % 60).toString().padStart(2, "0");
     const seconds = Math.floor((ms / 1000) % 60).toString().padStart(2, "0");
@@ -87,6 +110,7 @@ const MatchFlashcard = () => {
   };
 
   if (!shuffledItems.length) {
+    // Show loading state while fetching flashcard set
     return (
       <div className="text-center text-gray-500 mt-20">
         Loading flashcard set...
@@ -96,12 +120,12 @@ const MatchFlashcard = () => {
 
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
+      {/* Header with timer */}
       <Header id={id} time={time} formatTime={formatTime} />
 
-      {/* Match game body */}
+      {/* Game board with flashcards */}
       <div className="flex-1 flex justify-center items-center">
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] auto-rows-fr gap-5 p-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 auto-rows-fr gap-5 p-10">
           {shuffledItems.map((item, index) => (
             <FlashcardBox
               key={index}
@@ -110,12 +134,13 @@ const MatchFlashcard = () => {
               handleClick={handleBoxClick}
               isMatched={matchedBoxes.includes(index)}
               isSelected={selectedBoxes.includes(index)}
+              isIncorrect={incorrectBoxes.includes(index)}
             />
           ))}
         </div>
       </div>
 
-      {/* Game complete screen */}
+      {/* Show completion screen when the game ends */}
       {!running && <CompletionScreen id={id} time={time} formatTime={formatTime} />}
     </div>
   );
@@ -134,11 +159,14 @@ const Header = ({ id, time, formatTime }) => (
 );
 
 // Flashcard Box Component
-const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected }) => (
+const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected, isIncorrect }) => (
   <div
     onClick={() => handleClick(index)}
-    className={`flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${isMatched ? "opacity-0 pointer-events-none" : ""
-      } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"}`}
+    className={`w-[250px] flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${
+      isMatched ? "opacity-0 pointer-events-none" : ""
+    } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"} ${
+      isIncorrect ? "animate-shake border-red-500 border-4" : ""
+    }`}
   >
     <div className="text-center leading-tight">{item.text}</div>
   </div>

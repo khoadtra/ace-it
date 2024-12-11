@@ -7,32 +7,31 @@ import { auth } from "@/lib/firebase/config";
 import { useEffect } from "react";
 
 export default function Navbar() {
-    const { user, loading } = useAuth();
+    const { user, loading } = useAuth(); // Access user and loading state from authentication context
     const router = useRouter();
-    const pathname = usePathname(); // Get the current path
+    const pathname = usePathname(); // Get the current path for conditional rendering
 
     // Define paths where Navbar should be hidden
     const hideNavbarPaths = [
         "/account/login",
         "/account/register",
         "/account/forgot-password",
-        "/createset", // Exclude Navbar on the createset page
-        "/viewset", // Exclude Navbar on the viewset page
+        "/createset",
+        "/viewset",
     ];
 
     // Paths with dynamic segments (e.g., /match/[id], /quiz/[id])
-    const hideNavbarDynamicPaths = [
-        "/match/",
-        "/quiz/",
-    ];
+    const hideNavbarDynamicPaths = ["/match/", "/quiz/"];
 
-    // Check if the current path matches any hide conditions
+    /**
+     * Determines if the Navbar should be hidden based on the current path.
+     */
     const shouldHideNavbar = () => {
         if (hideNavbarPaths.some((path) => pathname.startsWith(path))) {
             return true;
         }
 
-        // Check if the current path starts with any dynamic segment paths
+        // Check for dynamic paths
         if (hideNavbarDynamicPaths.some((dynamicPath) => pathname.startsWith(dynamicPath))) {
             return true;
         }
@@ -40,34 +39,43 @@ export default function Navbar() {
         return false;
     };
 
-    // Redirect to login if user is not authenticated
+    /**
+     * Redirects unauthenticated users to the login page unless the Navbar is hidden.
+     */
     useEffect(() => {
         if (!loading && !user && !shouldHideNavbar()) {
             router.push("/account/login");
         }
     }, [loading, user, pathname, router]);
 
-    // Handle Logout
+    /**
+     * Handles user logout.
+     * Signs the user out and redirects to the login page.
+     */
     const handleLogout = async () => {
         try {
-            await signOut(auth);
-            router.push("/account/login");
+            await signOut(auth); // Sign out using Firebase authentication
+            router.push("/account/login"); // Redirect to login after logout
         } catch (error) {
-            console.error("Error signing out:", error.message);
+            console.error("Error signing out:", error.message); // Log error for debugging
+            alert("Failed to log out. Please try again."); // Show user-friendly error message
         }
     };
 
-    // Handle Search
+    /**
+     * Handles search bar input.
+     * Updates the search query in the URL dynamically or redirects to the home page if cleared.
+     */
     const handleSearch = (e) => {
         const query = e.target.value.trim();
         if (!query) {
-            router.push("/"); // Redirect to home page if search bar is cleared
+            router.push("/"); // Redirect to home if search input is cleared
         } else {
-            router.push(`/search?query=${encodeURIComponent(query)}`); // Update query in URL dynamically
+            router.push(`/search?query=${encodeURIComponent(query)}`); // Update the URL with the search query
         }
     };
 
-    // Hide Navbar if the current path matches a path in `hideNavbarPaths` or `hideNavbarDynamicPaths`
+    // Hide Navbar if the current path matches any of the conditions
     if (shouldHideNavbar()) {
         return null;
     }
@@ -77,7 +85,7 @@ export default function Navbar() {
             {/* Logo and Title */}
             <div
                 className="flex items-center cursor-pointer"
-                onClick={() => router.push("/")} // Navigate to home when clicked
+                onClick={() => router.push("/")} // Navigate to the home page when clicked
             >
                 <div className="h-10 w-10 bg-green-500 text-white flex items-center justify-center rounded-full text-xl font-bold">
                     A
@@ -89,7 +97,7 @@ export default function Navbar() {
                 <input
                     className="bg-gray-50 text-gray-700 flex-grow rounded p-2 pl-10 outline-gray-300 bg-no-repeat bg-[length:1rem] bg-[position:5px_50%] bg-[url('https://img.icons8.com/?size=100&id=59878&format=png&color=000000')]"
                     placeholder="Search keywords"
-                    onChange={handleSearch} // Update results dynamically
+                    onChange={handleSearch} // Update search results dynamically
                 />
             </div>
             {/* Profile Section */}
@@ -97,11 +105,11 @@ export default function Navbar() {
                 {/* Profile Icon and Username */}
                 <div
                     className="flex items-center space-x-2 cursor-pointer"
-                    onClick={() => router.push("/account/profile")} // Navigate to profile page when clicked
+                    onClick={() => router.push("/account/profile")} // Navigate to the profile page when clicked
                 >
                     <div
                         className="h-8 w-8 text-white flex items-center justify-center rounded-full text-sm font-bold"
-                        style={{ backgroundColor: user?.iconColor || "#4a90e2" }} // Use user's selected icon color
+                        style={{ backgroundColor: user?.iconColor || "#4a90e2" }} // Use user's selected icon color or default
                     >
                         {user?.icon || "U"}
                     </div>

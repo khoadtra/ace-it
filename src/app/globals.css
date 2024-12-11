@@ -6,3 +6,51 @@ body{
     background-color: #f3f4f6;
 }
 
+@keyframes shake {
+    0% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
+  100% { transform: translateX(0); }
+}
+
+.animate-shake{
+    animation: shake 0.5s ease-in-out;
+}
+
+/* Flashcards-Specific Styles */
+
+.card{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border-radius: 0.25rem;
+    box-shadow: 0 0 5px 2px black;
+    background-color: white;
+    height: 300px;
+    width: 400px;
+    transition: 500ms;
+    transform: perspective(1000px) rotateY(var(--rotate-y, 0)) translateY(var(--translate-y, 0));
+    cursor: pointer;
+    transform-style: preserve-3d;
+}
+
+.card:hover {
+    --translate-y: -10px;
+}
+
+.card .front,
+.card .back{
+    position: absolute;
+    padding:2rem;
+    backface-visibility: hidden;
+}
+
+.card.flip{
+    --rotate-y: 180deg;
+}
+
+.card .back{
+    transform: rotateY(180deg);
+}

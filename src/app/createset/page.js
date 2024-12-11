@@ -1,4 +1,5 @@
 "use client";
+
 import React, { Suspense, useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -8,8 +9,8 @@ import { useAuth } from "@/lib/firebase/authContext";
 const CreateSet = () => {
   const titleRef = useRef(null);
   const descriptionRef = useRef(null);
-  const termRefs = useRef([]);
-  const definitionRefs = useRef([]);
+  const termRefs = useRef([]); // References for term inputs
+  const definitionRefs = useRef([]); // References for definition inputs
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
@@ -17,42 +18,54 @@ const CreateSet = () => {
     id: null,
     title: "",
     description: "",
-    terms: [{ term: "", definition: "" }],
+    terms: [{ term: "", definition: "" }], // Initial flashcard term/definition pair
   });
 
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
+  /**
+   * Fetch flashcard set if editing an existing set.
+   * Uses the `edit` query parameter to identify the set.
+   */
   useEffect(() => {
     const editId = searchParams.get("edit");
     if (editId && user) {
       const fetchFlashcardSet = async () => {
         setLoading(true);
+        setError(null); // Reset error state
         try {
           const setToEdit = await getFlashcardSetById(editId);
           if (setToEdit) {
-            setFlashcardSet(setToEdit);
+            setFlashcardSet(setToEdit); // Load existing flashcard set
           } else {
-            alert("Flashcard set not found. Redirecting to create a new set.");
+            setError("Flashcard set not found. Redirecting to create a new set.");
           }
-        } catch (error) {
-          console.error("Error fetching flashcard set:", error.message);
-          alert("Failed to fetch flashcard set.");
+        } catch (err) {
+          console.error("Error fetching flashcard set:", err.message);
+          setError("Failed to fetch flashcard set. Please try again later.");
         } finally {
-          setLoading(false);
+          setLoading(false); // Ensure loading state is reset
         }
       };
       fetchFlashcardSet();
     }
   }, [searchParams, user]);
 
+  /**
+   * Save the flashcard set to the database.
+   * Validates input before saving.
+   */
   const saveFlashCardSet = async () => {
+    setError(null); // Reset error state
+
     if (!user) {
-      alert("You must be logged in to save a flashcard set.");
+      setError("You must be logged in to save a flashcard set.");
       return;
     }
 
     const updatedSet = {
-      id: flashcardSet.id || Date.now().toString(),
+      id: flashcardSet.id || Date.now().toString(), // Generate a new ID if not editing
       title: titleRef.current.value.trim() || "Untitled Set",
       description: descriptionRef.current.value.trim() || "No description provided.",
       terms: flashcardSet.terms.map((_, index) => ({
@@ -60,7 +73,7 @@ const CreateSet = () => {
         definition: definitionRefs.current[index]?.value.trim() || "",
       })),
       ownerName: user.userName,
-      iconColor: user.iconColor || "#cccccc",
+      iconColor: user.iconColor || "#cccccc", // Default icon color
     };
 
     // Validate terms
@@ -68,19 +81,22 @@ const CreateSet = () => {
       (card) => !card.term || !card.definition
     );
     if (invalidTerms) {
-      alert("All terms and definitions must be filled out before saving.");
+      setError("All terms and definitions must be filled out before saving.");
       return;
     }
 
     try {
-      await saveFlashcardSet(user.uid, updatedSet);
+      await saveFlashcardSet(user.uid, updatedSet); // Save to Firestore
       alert("Flashcard set saved successfully!");
-    } catch (error) {
-      console.error("Error saving flashcard set:", error.message);
-      alert("Failed to save flashcard set. Please try again.");
+    } catch (err) {
+      console.error("Error saving flashcard set:", err.message);
+      setError("Failed to save flashcard set. Please try again.");
     }
   };
 
+  /**
+   * Add a new empty flashcard to the set.
+   */
   const addNewCard = () => {
     setFlashcardSet((prevSet) => ({
       ...prevSet,
@@ -88,6 +104,9 @@ const CreateSet = () => {
     }));
   };
 
+  /**
+   * Delete a specific flashcard by its index.
+   */
   const deleteCard = (indexToDelete) => {
     setFlashcardSet((prevSet) => ({
       ...prevSet,
@@ -95,6 +114,7 @@ const CreateSet = () => {
     }));
   };
 
+  // Display loading state while fetching data
   if (loading) {
     return <div className="text-center mt-20">Loading...</div>;
   }
@@ -184,6 +204,7 @@ const CreateSet = () => {
             Add New Card
           </button>
         </section>
+        {error && <p className="text-red-500 mt-4">{error}</p>}
       </main>
     </>
   );

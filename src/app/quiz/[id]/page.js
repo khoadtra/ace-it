@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getFlashcardSetById } from "@/lib/firebase/firestoreHelpers"; // Import Firestore helper
+import { getFlashcardSetById } from "@/lib/firebase/firestoreHelpers";
 
 export default function QuizPage() {
   const router = useRouter();
@@ -16,41 +16,48 @@ export default function QuizPage() {
   const [completed, setCompleted] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [isCorrect, setIsCorrect] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Fetch flashcards from Firestore
+  /**
+   * Fetches the flashcard set from Firestore and sets the state.
+   */
   useEffect(() => {
     const fetchFlashcardSet = async () => {
+      setError(null); // Reset error state
       try {
-        const selectedSet = await getFlashcardSetById(id); // Fetch from the global collection
-
-        if (selectedSet) {
+        const selectedSet = await getFlashcardSetById(id);
+        if (selectedSet?.terms?.length) {
           setFlashcards(selectedSet.terms);
         } else {
-          alert("Flashcard set not found!");
-          router.push("/");
+          setError("Flashcard set not found or contains no terms. Redirecting...");
+          setTimeout(() => router.push("/"), 3000);
         }
-      } catch (error) {
-        console.error("Error fetching flashcard set:", error.message);
-        alert("Failed to load flashcard set.");
-        router.push("/");
+      } catch (err) {
+        console.error("Error fetching flashcard set:", err.message);
+        setError("Failed to load flashcard set. Redirecting...");
+        setTimeout(() => router.push("/"), 3000);
       }
     };
 
     fetchFlashcardSet();
   }, [id, router]);
 
-  // Handle Answer Submission
+  /**
+   * Validates and checks the user's answer.
+   */
   const handleCheckAnswer = () => {
+    if (flashcards.length === 0 || currentIndex >= flashcards.length) return;
+
     const currentCard = flashcards[currentIndex];
     const isAnswerCorrect =
-      userInput.toLowerCase().trim() === currentCard.definition.toLowerCase().trim();
+      userInput.trim().toLowerCase() === currentCard.definition.trim().toLowerCase();
 
     if (isAnswerCorrect) {
       setScore((prev) => prev + 1);
       setFeedback("Correct!");
       setIsCorrect(true);
     } else {
-      setFeedback("Wrong!");
+      setFeedback("Wrong! The correct answer is: " + currentCard.definition);
       setIsCorrect(false);
     }
 
@@ -63,12 +70,23 @@ export default function QuizPage() {
       }
       setFeedback("");
       setIsCorrect(null);
-    }, 1000);
+    }, 1500);
   };
 
+  /**
+   * Ends the quiz early and marks it as completed.
+   */
   const handleQuit = () => {
     setCompleted(true);
   };
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100 text-center">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col items-center bg-gray-100 p-4">
@@ -151,17 +169,19 @@ const QuizContent = ({
           value={userInput}
           onChange={(e) => setUserInput(e.target.value)}
           placeholder="Type your answer here..."
-          className={`w-full p-2 border rounded-lg mb-4 ${isCorrect === true
+          className={`w-full p-2 border rounded-lg mb-4 ${
+            isCorrect === true
               ? "border-green-500"
               : isCorrect === false
-                ? "border-red-500"
-                : "border-gray-300"
-            }`}
+              ? "border-red-500"
+              : "border-gray-300"
+          }`}
         />
         {feedback && (
           <p
-            className={`text-lg mb-4 ${isCorrect ? "text-green-500" : "text-red-500"
-              } transition-opacity duration-500`}
+            className={`text-lg mb-4 ${
+              isCorrect ? "text-green-500" : "text-red-500"
+            } transition-opacity duration-500`}
           >
             {feedback}
           </p>

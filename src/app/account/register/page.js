@@ -9,6 +9,8 @@ import debounce from "lodash.debounce";
 const RegisterPage = () => {
     const router = useRouter();
     const { user, loading } = useAuth();
+
+    // Form states
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
     const [emailConfirmation, setEmailConfirmation] = useState("");
@@ -23,12 +25,18 @@ const RegisterPage = () => {
     const [usernameError, setUsernameError] = useState(null);
     const [error, setError] = useState(null);
 
+    /**
+     * Redirect logged-in users to the home page.
+     */
     useEffect(() => {
         if (!loading && user) {
-            router.push("/"); // Redirect logged-in users
+            router.push("/"); // Prevent access to the registration page for logged-in users
         }
     }, [user, loading, router]);
 
+    /**
+     * Validates and updates the password validity states.
+     */
     const handlePasswordChange = (value) => {
         setPassword(value);
         setPasswordValidations({
@@ -36,40 +44,63 @@ const RegisterPage = () => {
             uppercase: /[A-Z]/.test(value),
             numeric: /[0-9]/.test(value),
         });
-        setError(null); // Clear error message on password change
+        setError(null); // Clear error message when the user starts modifying the password
     };
 
+    /**
+     * Validates username format (3-20 characters, alphanumeric, or underscores).
+     */
     const isUsernameValid = (username) => /^[a-zA-Z0-9_]{3,20}$/.test(username);
 
+    /**
+     * Debounced function to check if the username is available.
+     * Prevents excessive requests while typing.
+     */
     const checkUsernameAvailability = debounce(async (username) => {
         if (isUsernameValid(username)) {
             try {
                 const usernameExists = await checkUsernameExists(username);
                 setUsernameError(usernameExists ? "Username is already taken." : null);
-            } catch {
-                setUsernameError("Error checking username availability.");
+            } catch (err) {
+                console.error("Error checking username availability:", err.message);
+                setUsernameError("Failed to check username availability. Please try again.");
             }
         } else {
             setUsernameError(
-                "Username must be 3-20 characters and can only contain letters, numbers, and underscores."
+                "Username must be 3-20 characters long and can only contain letters, numbers, and underscores."
             );
         }
     }, 500);
 
+    /**
+     * Handles the registration process.
+     * Validates input fields and checks for mismatched emails/passwords.
+     */
     const handleRegister = async (e) => {
         e.preventDefault();
         setError(null);
 
-        if (!username || !email || !emailConfirmation || !password || !passwordConfirmation || !termsAccepted || usernameError) {
+        // Ensure all fields are correctly filled
+        if (
+            !username ||
+            !email ||
+            !emailConfirmation ||
+            !password ||
+            !passwordConfirmation ||
+            !termsAccepted ||
+            usernameError
+        ) {
             setError("Please fill out all fields correctly.");
             return;
         }
 
+        // Validate email confirmation
         if (email !== emailConfirmation) {
             setError("Emails do not match.");
             return;
         }
 
+        // Validate password confirmation
         if (password !== passwordConfirmation) {
             setError("Passwords do not match.");
             return;
@@ -78,8 +109,11 @@ const RegisterPage = () => {
         try {
             await registerUser(username, email, password);
             router.push("/"); // Redirect to the home page after successful registration
-        } catch (error) {
-            if (error.code === "auth/email-already-in-use") {
+        } catch (err) {
+            console.error("Registration error:", err.message);
+
+            // Handle Firebase error codes
+            if (err.code === "auth/email-already-in-use") {
                 setError("The email address is already in use by another account.");
             } else {
                 setError("Registration failed. Please try again.");
@@ -87,6 +121,7 @@ const RegisterPage = () => {
         }
     };
 
+    // Show loading spinner while checking authentication status
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -95,7 +130,7 @@ const RegisterPage = () => {
         );
     }
 
-    if (user) return null;
+    if (user) return null; // Prevent rendering for logged-in users
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -108,7 +143,7 @@ const RegisterPage = () => {
                         value={username}
                         onChange={(e) => {
                             setUsername(e.target.value);
-                            setUsernameError(null);
+                            setUsernameError(null); // Clear previous username error
                             checkUsernameAvailability(e.target.value);
                         }}
                         placeholder="Username"
@@ -145,6 +180,7 @@ const RegisterPage = () => {
                         className="mb-4 p-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <div className="text-left mb-4">
+                        {/* Password Validation Messages */}
                         <p className={`text-sm ${passwordValidations.length ? "text-green-500" : "text-red-500"}`}>
                             • Minimum password length of 6 characters
                         </p>
@@ -191,7 +227,7 @@ const RegisterPage = () => {
                     </button>
                 </form>
 
-                {/* Centered Already Have an Account */}
+                {/* Already Have an Account */}
                 <p className="text-sm text-gray-600 mt-4 text-center">
                     Already have an account?{" "}
                     <a href="/account/login" className="text-blue-500 hover:underline">
