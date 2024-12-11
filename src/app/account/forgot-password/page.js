@@ -88,7 +88,6 @@ const ForgotPasswordPage = () => {
                     Reset Password
                 </button>
 
-                {/* Link to the login page */}
                 <div className="mt-4 text-center">
                     <p className="text-sm text-gray-600">
                         Remember your password?{' '}

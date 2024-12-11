@@ -162,11 +162,9 @@ const Header = ({ id, time, formatTime }) => (
 const FlashcardBox = ({ item, index, handleClick, isMatched, isSelected, isIncorrect }) => (
   <div
     onClick={() => handleClick(index)}
-    className={`w-[250px] flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${
-      isMatched ? "opacity-0 pointer-events-none" : ""
-    } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"} ${
-      isIncorrect ? "animate-shake border-red-500 border-4" : ""
-    }`}
+    className={`w-[250px] flex justify-center items-center bg-white p-6 rounded-lg shadow-lg transition cursor-pointer ${isMatched ? "opacity-0 pointer-events-none" : ""
+      } ${isSelected ? "border-solid border-4 border-blue-200" : "hover:bg-gray-200"}
+        ${isIncorrect? "animate-shake border-red-500 border-4" : ""}`}
   >
     <div className="text-center leading-tight">{item.text}</div>
   </div>

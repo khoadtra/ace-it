@@ -57,7 +57,7 @@ const ViewAllSets = () => {
     };
 
     fetchFlashcardSets();
-  }, []);
+  }, [user]);
 
   /**
    * Handles the deletion of a flashcard set.
@@ -124,11 +124,24 @@ const ViewAllSets = () => {
         <div className="text-lg font-bold ml-auto mr-auto">Flashcard Sets</div>
       </div>
 
-      {/* Flashcard Sets List with Stacked Effect */}
-      <div className="flex flex-col items-center mt-8 space-y-8">
-        {flashcardSets.map((set) => (
-          <FlashcardSetCard key={set.id} set={set} onDelete={handleDelete} />
-        ))}
+      {/* Main Content */}
+      <div className="text-center mt-20">
+        {flashcardSets.length === 0 ? (
+          <>
+            <p className="text-gray-500 mb-4">No flashcard sets available.</p>
+            <Link href="/createset">
+              <button className="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-green-600 transition">
+                Create a Flashcard Set
+              </button>
+            </Link>
+          </>
+        ) : (
+          <div className="flex flex-col items-center mt-8 space-y-8">
+            {flashcardSets.map((set) => (
+              <FlashcardSetCard key={set.id} set={set} onDelete={handleDelete} />
+            ))}
+          </div>
+        )}
       </div>
     </>
   );

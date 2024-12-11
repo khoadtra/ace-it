@@ -19,7 +19,7 @@ body{
 }
 
 /* Flashcards-Specific Styles */
-
+  
 .card{
     display: flex;
     justify-content: center;

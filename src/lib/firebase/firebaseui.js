@@ -13,7 +13,7 @@ const getUiConfig = () => ({
             // UI shown callback
         },
         signInSuccessWithAuthResult: (authResult) => {
-            window.location.href = "/"; // Redirect to home
+            window.location.href = "/";
             return false;
         },
         signInFailure: (error) => {
